@@ -145,23 +145,22 @@ inline void Unhook(PTR_T ptr) {
 // Dummy
 #include <cassert>
 
+static_assert(false, "No hooking software!");
+
 template<typename PTR_T, typename NEW_T, typename T_OLD>
 inline void *BasicHook(PTR_T ptr, NEW_T newMethod, T_OLD &oldBytes) {
-    assert("Нет ПО для подмены! (No hooking software!)");
     if ((void *) ptr != nullptr) ((void)0);
     return nullptr;
 }
 
 template<typename PTR_T, typename NEW_T, typename T_OLD>
 inline void *BasicHook(PTR_T ptr, NEW_T newMethod, T_OLD &&oldBytes) {
-    assert("Нет ПО для подмены! (No hooking software!)");
     if ((void *) ptr != nullptr) ((void)0);
     return nullptr;
 }
 
 template<typename PTR_T>
 inline void Unhook(PTR_T ptr) {
-    assert("Нет ПО для подмены! (No hooking software!)");
     if ((void *) ptr != nullptr) ((void)0);
 }
 
@@ -232,4 +231,4 @@ namespace BNM {
 #endif
 }
 
-#define BNM_VER "2.4.0"
+#define BNM_VER "2.5.0"

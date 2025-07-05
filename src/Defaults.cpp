@@ -54,6 +54,6 @@ void BNM::Internal::LoadDefaults() {
     MonoBehaviour = TryGetClassInImage(image, UnityEngineStr, BNM_OBFUSCATE_TMP("MonoBehaviour"));
 }
 
-BNM::Defaults::DefaultTypeRef::operator BNM::CompileTimeClass() const { return {._reference = _reference, ._autoFree = false, ._isReferenced = true}; }
+BNM::Defaults::DefaultTypeRef::operator BNM::CompileTimeClass() const { return {_reference}; }
 BNM::Defaults::DefaultTypeRef::operator BNM::Class() const { return _reference ? *_reference : nullptr; }
 BNM::Class BNM::Defaults::DefaultTypeRef::ToClass() const { return _reference ? *_reference : nullptr; }

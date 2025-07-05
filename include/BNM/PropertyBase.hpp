@@ -42,6 +42,18 @@ namespace BNM {
         PropertyBase &SetInstance(IL2CPP::Il2CppObject *val);
 
         /**
+            @brief Get property type.
+            @return BNM::Class of property's type
+        */
+        [[nodiscard]] BNM::Class GetType() const;
+
+        /**
+            @brief Get class that contains this property.
+            @return BNM::Class of property's class
+        */
+        [[nodiscard]] BNM::Class GetParentClass() const;
+
+        /**
             @brief Operator for setting instance.
             @param instance Instance
             @return Reference to current PropertyBase

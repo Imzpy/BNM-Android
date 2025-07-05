@@ -59,3 +59,13 @@ void *FieldBase::GetFieldPointer() const {
     if (_isStatic) return (void *) ((BNM_PTR) _data->parent->static_fields + _data->offset);
     return (void *) ((BNM_PTR) _instance + _data->offset - (_isInStruct ? sizeof(IL2CPP::Il2CppObject) : 0x0));
 }
+
+BNM::Class FieldBase::GetType() const {
+    if (!_data) return {};
+    return _data->type;
+}
+
+BNM::Class FieldBase::GetParentClass() const {
+    if (!_data) return {};
+    return _data->parent;
+}

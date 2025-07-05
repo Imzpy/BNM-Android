@@ -324,7 +324,9 @@ MonoType *Class::GetMonoType() const {
 BNM::CompileTimeClass Class::GetCompileTimeClass() const {
     BNM_LOG_ERR_IF(!_data, DBG_BNM_MSG_Class_Dead_Error);
     TryInit();
-    return {._loadedClass = *this, ._autoFree = false};
+    BNM::CompileTimeClass result{};
+    result._loadedClass = *this;
+    return result;
 }
 
 BNM::Image Class::GetImage() const {
@@ -444,8 +446,8 @@ namespace CompileTimeClassProcessors {
         
         auto genericInfo = (CompileTimeClass::_GenericInfo *) info;
 
-        // Экономия памяти, даже если пользователь не хочет
-        for (auto &type : genericInfo->_types) ((BNM::CompileTimeClass &)type)._autoFree = true;
+        // Save memory, even if the user does not want to
+        for (auto &type : genericInfo->_types) if (!type._stack.IsEmpty()) ((BNM::CompileTimeClass &)type)._SetBit();
         target._loadedClass = Internal::TryMakeGenericClass(target._loadedClass, genericInfo->_types);
         genericInfo->_types.clear();
         genericInfo->_types.shrink_to_fit();
@@ -461,27 +463,40 @@ namespace CompileTimeClassProcessors {
 }
 
 Class CompileTimeClass::ToClass() {
-    if (_isReferenced) {
-        _isReferenced = false;
+    // No reference or autoFree
+    if (!_IsBit()) {
+        if (_loadedClass) return _loadedClass;
+        if (_stack.IsEmpty()) return {(IL2CPP::Il2CppClass *) nullptr};
+    }
+
+    // If stack is empty, but bit is set - we have reference
+    if (_stack.IsEmpty()) {
+        _RemoveBit();
         auto ref = _reference ? *_reference : nullptr;
         _loadedClass = ref;
+        _loadedClass.TryInit();
+        return _loadedClass;
     }
-    if (_loadedClass) return _loadedClass;
-    if (_stack.empty()) return {(IL2CPP::Il2CppClass *) nullptr};
 
-    for (auto info : _stack) {
+    bool autoFree = _IsBit();
+    _RemoveBit();
+
+    auto lastElement = _stack.lastElement;
+    auto current = lastElement->next;
+    do {
+        auto info = current->value;
+
         auto index = (uint8_t) info->_baseType;
         if (index >= (uint8_t) CompileTimeClass::_BaseType::MaxCount) {
             BNM_LOG_WARN(DBG_BNM_MSG_CompileTimeClass_ToClass_OoB_Warn, (size_t) index);
             continue;
         }
         CompileTimeClassProcessors::processors[index](*this, (_BaseInfo *) info);
-    }
 
-    if (_autoFree) {
-        _autoFree = false;
-        Free();
-    }
+        current = current->next;
+    } while (current != lastElement->next);
+
+    if (autoFree) Free();
 
     _loadedClass.TryInit();
     return _loadedClass;
@@ -495,10 +510,9 @@ CompileTimeClass::operator IL2CPP::Il2CppType*() const { return ToIl2CppType(); 
 IL2CPP::Il2CppClass *CompileTimeClass::ToIl2CppClass() const { return ToClass().GetClass(); }
 CompileTimeClass::operator IL2CPP::Il2CppClass*() const { return ToIl2CppClass(); }
 void CompileTimeClass::Free() {
-    if (_autoFree) return;
+    if (_stack.IsEmpty()) return;
 
-    _autoFree = true;
-
-    for (auto info : _stack) BNM_free((void *) info);
-    _stack.clear();
+    _stack.Clear([](CompileTimeClass::_BaseInfo *info) {
+        BNM_free((void *) info);
+    });
 }

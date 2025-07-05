@@ -201,12 +201,12 @@ namespace BNM::UnityEngine {
         /**
             @brief Add listener to event.
         */
-        inline void AddListener(UnityAction<Parameters...> *action) { BNM::Class(klass).GetMethod(BNM_OBFUSCATE("AddListener")).template cast<void>().Call(action); }
+        inline void AddListener(UnityAction<Parameters...> *action) { BNM::Class(klass).GetMethod(BNM_OBFUSCATE("AddListener")).template cast<void>()[this](action); }
 
         /**
             @brief Remove listener from event.
         */
-        inline void RemoveListener(UnityAction<Parameters...> *action) { BNM::Class(klass).GetMethod(BNM_OBFUSCATE("RemoveListener")).template cast<void>().Call(action); }
+        inline void RemoveListener(UnityAction<Parameters...> *action) { BNM::Class(klass).GetMethod(BNM_OBFUSCATE("RemoveListener")).template cast<void>()[this](action); }
 
         /**
             @brief Invoke event.
@@ -265,7 +265,9 @@ namespace BNM::UnityEngine {
                 }
                 if (!methodBase.IsValid() || !methodBase._isStatic && !persistentCall->m_Target) continue;
 
-                methodBase.cast<void>()(parameters...);
+                if (methodBase._isStatic) return methodBase.cast<void>()(parameters...);
+
+                methodBase.cast<void>()[persistentCall->m_Target](parameters...);
             }
         }
 

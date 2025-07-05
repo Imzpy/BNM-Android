@@ -21,3 +21,18 @@ PropertyBase &PropertyBase::SetInstance(IL2CPP::Il2CppObject *val) {
     if (_hasSetter) _setter.SetInstance(val);
     return *this;
 }
+
+BNM::Class PropertyBase::GetType() const {
+    if (!_data) return {};
+    return _data->get ? _data->get->return_type :
+#if UNITY_VER < 212
+            _data->set->parameters->parameter_type;
+#else
+            _data->set->parameters[0];
+#endif
+}
+
+BNM::Class PropertyBase::GetParentClass() const {
+    if (!_data) return {};
+    return _data->parent;
+}

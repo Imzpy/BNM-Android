@@ -166,7 +166,7 @@ BNM::Coroutine::IEnumerator *BNM::Coroutine::IEnumerator::Get() {
     auto inst = (BNM::Coroutine::IEnumerator *) BNM::Class(IEnumeratorData::customClass.myClass).CreateNewInstance();
     inst->_current = nullptr;
     inst->_coroutine = nullptr;
-    // Changing the coroutineHandle in places to avoid cleaning
+    // Swapping the coroutineHandle in places to avoid cleaning
     std::swap(this->_coroutine, inst->_coroutine);
     return inst;
 }

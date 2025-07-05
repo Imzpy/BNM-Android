@@ -11,11 +11,7 @@ BNM::Exception BNM::TryInvoke(const std::function<void()> &func) {
     BNM::IL2CPP::MethodInfo info;
     for (size_t i = 0; i < sizeof(info); ++i) *(char *)&info = 0;
     info.return_type = &type;
-#if UNITY_VER <= 174
-    info.declaring_type = &klass;
-#else
-    info.klass = &klass;
-#endif
+    BNM::PRIVATE_INTERNAL::GetMethodClass(&info) = &klass;
 
     info.methodPointer = (decltype(info.methodPointer)) &func;
 #if UNITY_VER < 171

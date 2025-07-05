@@ -73,6 +73,18 @@ namespace BNM {
         MethodBase GetOverride() const;
 
         /**
+            @brief Get return type of method.
+            @return BNM::Class of method's return type
+        */
+        [[nodiscard]] BNM::Class GetReturnType() const;
+
+        /**
+            @brief Get class that contains this method.
+            @return BNM::Class of method's class
+        */
+        [[nodiscard]] BNM::Class GetParentClass() const;
+
+        /**
             @brief Operator for setting instance.
             @param instance Instance
             @return Reference to current MethodBase
@@ -109,18 +121,12 @@ namespace BNM {
             @return Method's full name or "Dead method".
         */
         inline std::string str() const {
-#if UNITY_VER > 174
-#define kls klass
-#else
-#define kls declaring_type
-#endif
             if (!_data) return BNM_OBFUSCATE(DBG_BNM_MSG_MethodBase_str_nullptr);
             return Class(_data->return_type).str() + BNM_OBFUSCATE(" ") +
-                Class(_data->kls).str() + BNM_OBFUSCATE(".(") +
+                Class(BNM::PRIVATE_INTERNAL::GetMethodClass(_data)).str() + BNM_OBFUSCATE(".(") +
                     _data->name + BNM_OBFUSCATE("){" DBG_BNM_MSG_MethodBase_str_args_count ": ") +
                 std::to_string(_data->parameters_count) + BNM_OBFUSCATE("}") +
                 (_isStatic ? BNM_OBFUSCATE("(" DBG_BNM_MSG_MethodBase_str_static ")") : BNM_OBFUSCATE(""));
-#undef kls
         }
 #endif
 

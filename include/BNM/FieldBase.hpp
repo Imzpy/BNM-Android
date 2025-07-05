@@ -63,6 +63,18 @@ namespace BNM {
         [[nodiscard]] void *GetFieldPointer() const;
 
         /**
+            @brief Get field type.
+            @return BNM::Class of field's type
+        */
+        [[nodiscard]] BNM::Class GetType() const;
+
+        /**
+            @brief Get class that contains this field.
+            @return BNM::Class of field's class
+        */
+        [[nodiscard]] BNM::Class GetParentClass() const;
+
+        /**
             @brief Operator for setting instance.
             @param instance Instance
             @return Reference to current FieldBase

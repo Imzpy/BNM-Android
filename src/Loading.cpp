@@ -34,7 +34,12 @@ void Internal::Load() {
 
     // Call all events after loading il2cpp
     auto events = onIl2CppLoaded;
-    for (auto event : events) event();
+    auto current = events.lastElement->next;
+    do {
+        current->value();
+
+        current = current->next;
+    } while (current != events.lastElement->next);
 }
 
 void *Internal::GetIl2CppMethod(const char *methodName) {
@@ -478,9 +483,9 @@ void Internal::SetupBNM() {
 }
 
 void Loading::AddOnLoadedEvent(void (*event)()) {
-    if (event) Internal::onIl2CppLoaded.push_back(event);
+    if (event) Internal::onIl2CppLoaded.Add(event);
 }
 
 void Loading::ClearOnLoadedEvents() {
-    Internal::onIl2CppLoaded.clear();
+    Internal::onIl2CppLoaded.Clear();
 }

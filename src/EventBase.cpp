@@ -26,3 +26,8 @@ EventBase &EventBase::SetInstance(IL2CPP::Il2CppObject *instance) {
     if (_hasRaise) _raise.SetInstance(instance);
     return *this;
 }
+
+BNM::Class EventBase::GetParentClass() const {
+    if (!_data) return {};
+    return _data->parent;
+}

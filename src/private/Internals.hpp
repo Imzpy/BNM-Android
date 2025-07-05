@@ -5,7 +5,6 @@
     This file can be included only by advanced users that know how BNM and il2cpp API work.
 */
 
-#include <list>
 #include <vector>
 #include <map>
 
@@ -82,7 +81,7 @@ namespace BNM::Internal {
 
 #pragma pack(pop)
 
-    extern std::list<void(*)()> onIl2CppLoaded;
+    extern BNM::ForwardList<void(*)()> onIl2CppLoaded;
 
     extern std::string_view constructorName;
     extern BNM::Class customListTemplateClass;

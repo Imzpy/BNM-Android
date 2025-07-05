@@ -15,7 +15,7 @@ namespace BNM::Internal {
     // il2cpp methods to avoid searching for them every BNM query
     Il2CppMethods il2cppMethods{};
 
-    std::list<void(*)()> onIl2CppLoaded{};
+    BNM::ForwardList<void(*)()> onIl2CppLoaded{};
 
     std::string_view constructorName = BNM_OBFUSCATE(".ctor");
     BNM::Class customListTemplateClass{};
@@ -128,6 +128,11 @@ MethodBase Internal::TryMakeGenericMethod(const MethodBase &genericMethod, const
     if (!vmData.RuntimeMethodInfo$$MakeGenericMethod_impl.IsValid() || !genericMethod.GetInfo()->is_generic) return {};
     IL2CPP::Il2CppReflectionMethod reflectionMethod;
     reflectionMethod.method = genericMethod.GetInfo();
+
+    // Il2cpp don't care about it
+#ifdef BNM_CHECK_INSTANCE_TYPE
+    reflectionMethod.object.klass = BNM::PRIVATE_INTERNAL::GetMethodClass(vmData.RuntimeMethodInfo$$MakeGenericMethod_impl._data);
+#endif
     auto monoGenericsList = Structures::Mono::Array<MonoType *>::Create(templateTypes.size(), true);
     for (IL2CPP::il2cpp_array_size_t i = 0; i < (IL2CPP::il2cpp_array_size_t) templateTypes.size(); ++i) (*monoGenericsList)[i] = templateTypes[i].ToClass().GetMonoType();
 

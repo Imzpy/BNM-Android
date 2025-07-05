@@ -65,8 +65,8 @@ void Internal::ClassesManagement::ProcessCustomClasses() {
 }
 
 void ClassesManagement::ProcessClassRuntime(BNM::MANAGEMENT_STRUCTURES::CustomClass *customClass) {
-    auto type = customClass->_targetType;
-    type._autoFree = false;
+    auto &type = customClass->_targetType;
+    if (!type._stack.IsEmpty()) type._RemoveBit();
     auto info = GetClassInfo(type);
     if (info._class) ModifyClass(customClass, info._class);
     else if (info._name) CreateClass(customClass, info);
@@ -111,13 +111,8 @@ static void ModifyClass(BNM::MANAGEMENT_STRUCTURES::CustomClass *customClass, Cl
 
             bool isHooked = false;
             method->myInfo = ProcessCustomMethod(method, target, &isHooked);
-#if UNITY_VER > 174
-#define kls klass
-#else
-#define kls declaring_type
-#endif
-            method->myInfo->kls = klass;
-#undef kls
+
+            BNM::PRIVATE_INTERNAL::GetMethodClass(method->myInfo) = klass;
 
             if (!isHooked) methodsToAdd.push_back(method->myInfo);
             BNM_LOG_DEBUG_IF(isHooked, DBG_BNM_MSG_ClassesManagement_ModifyClasses_Hooked_Method, (method->_isStatic == 1) ? DBG_BNM_MSG_ClassesManagement_Method_Static : "", method->_name.data(), method->_parameterTypes.size());
@@ -355,19 +350,11 @@ static void CreateClass(BNM::MANAGEMENT_STRUCTURES::CustomClass *customClass, co
         klass->implementedInterfaces = nullptr;
     }
 
-#if UNITY_VER > 174
-#define kls klass
-#else
-#define kls declaring_type
-#endif
-
     // Completing the creation of methods
-    for (auto method : customClass->_methods) method->myInfo->kls = klass;
+    for (auto method : customClass->_methods) BNM::PRIVATE_INTERNAL::GetMethodClass(method->myInfo) = klass;
     klass->method_count = customClass->_methods.size();
     klass->methods = methods;
     klass->has_finalize = hasFinalize;
-
-#undef kls
 
     // Copy the parent flags and remove the ABSTRACT flag if it exists
     klass->flags = klass->parent->flags & ~(0x00000080 | 0x00000020); // TYPE_ATTRIBUTE_ABSTRACT
@@ -467,32 +454,43 @@ static CustomClassInfo GetClassInfo(const BNM::CompileTimeClass &compileTimeClas
     CompileTimeClass tmp{};
 
     auto &stack = compileTimeClass._stack;
-    int i = 0;
-    for (auto it = stack.begin(); it != stack.end(); ++it, i++) {
-        auto info = *it;
+
+    auto lastElement = stack.lastElement;
+    auto current = lastElement->next;
+    do {
+        auto info = current->value;
 
         auto index = (uint8_t) info->_baseType;
 
         // Protection from other types. We are not interested in Generic, Modifier, and other things that do not relate to the class hierarchy.
-        if (index != (uint8_t) BNM::CompileTimeClass::_BaseType::Class) continue;
+        if (index != (uint8_t) BNM::CompileTimeClass::_BaseType::Class) {
+            current = current->next;
+            continue;
+        }
 
         CompileTimeClassProcessors::processors[index](tmp, (BNM::CompileTimeClass::_BaseInfo *) info);
 
-        if (tmp._loadedClass) continue;
+        if (tmp._loadedClass) {
+            current = current->next;
+            continue;
+        }
 
-        auto it2 = it;
         bool found = true;
-        while (++it2 != stack.end()) {
-            if ((*it2)->_baseType != BNM::CompileTimeClass::_BaseType::Class) continue;
-            found = false;
-            break;
+        auto next = current->next;
+        while (next != lastElement->next) {
+            if (next->value->_baseType == BNM::CompileTimeClass::_BaseType::Class) {
+                found = false;
+                break;
+            }
+            next = next->next;
         }
 
         auto classInfo = (CompileTimeClass::_ClassInfo *) info;
 
         if (found) return {classInfo->_namespace, classInfo->_name, classInfo->_imageName};
         return {};
-    }
+
+    } while (current != lastElement->next);
     return {._class = compileTimeClass.ToClass()};
 }
 
@@ -635,17 +633,23 @@ static IL2CPP::MethodInfo *ProcessCustomMethod(MANAGEMENT_STRUCTURES::CustomMeth
         return true;
     });
 
-#if UNITY_VER > 174
-#define kls klass
-#else
-#define kls declaring_type
-#endif
-
-    if (!originalMethod || originalMethod->kls != target._data) {
+    if (!originalMethod || BNM::PRIVATE_INTERNAL::GetMethodClass(originalMethod) != target._data) {
         bool isVirtual = originalMethod != nullptr && (originalMethod->flags & 0x0040) == 0x0040;
         auto parent = originalMethod;
         originalMethod = CreateMethod(method);
-        if (!hooked || !isVirtual || !parent) return originalMethod;
+
+        bool hasNonVirtualParent = !isVirtual && parent;
+
+        if (hasNonVirtualParent) {
+            method->_origin = parent;
+            method->_originalAddress = (void *) parent->methodPointer;
+            return originalMethod;
+        }
+
+        // Check if we modifying class
+        bool canDoVirtualHook = hooked && isVirtual /* Can be true only if parent not null */;
+
+        if (!canDoVirtualHook) return originalMethod;
 
         // Trying to override virtual method
         uint16_t slot{};

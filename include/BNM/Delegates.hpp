@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "UserSettings/GlobalSettings.hpp"
 #include "Method.hpp"
 #include "BasicMonoStructures.hpp"
@@ -16,7 +18,7 @@ namespace BNM {
     /**
         @brief Wrapper of Il2CppDelegate
     */
-    struct DelegateBase : IL2CPP::Il2CppDelegate {
+    struct DelegateBase : public IL2CPP::Il2CppDelegate {
         inline constexpr DelegateBase() = default;
 
         /**
@@ -31,13 +33,14 @@ namespace BNM {
             @brief Get method of delegate.
             @return MethodBase if delegate isn't null, otherwise empty MethodBase.
         */
-        inline MethodBase GetMethod() const {
-            if (!CheckForNull(this)) return {};
-            auto method = MethodBase(this->method);
-            auto instance = GetInstance();
-            if (instance) method.SetInstance(instance);
-            return method;
-        }
+        inline BNM::MethodBase GetMethod() const;
+
+        /**
+            @brief Create delegate from method.
+            @param method Method that will be used in new delegate
+            @return New DelegateBase
+        */
+        DelegateBase *Create(BNM::MethodBase method);
 
         /**
             @brief Check if delegate is valid.
@@ -59,37 +62,37 @@ namespace BNM {
     /**
         @brief Wrapper of Il2CppMulticastDelegate
     */
-    struct MulticastDelegateBase : IL2CPP::Il2CppMulticastDelegate {
+    struct MulticastDelegateBase : public IL2CPP::Il2CppMulticastDelegate {
         inline constexpr MulticastDelegateBase() = default;
 
         /**
             @brief Get methods of delegate.
             @return Vector of MethodBase if delegate isn't null, otherwise empty vector.
         */
-        inline std::vector<MethodBase> GetMethods() const {
-            if (!CheckForNull(this)) return {};
-
-            auto delegates = (Structures::Mono::Array<DelegateBase *> *) this->delegates;
-            if (!delegates) return {((DelegateBase *)this)->GetMethod()};
-
-            std::vector<MethodBase> ret{};
-            ret.reserve(delegates->capacity);
-            for (IL2CPP::il2cpp_array_size_t i = 0; i < delegates->capacity; ++i) ret.push_back(delegates->At(i)->GetMethod());
-            return std::move(ret);
-        }
+        inline std::vector<BNM::MethodBase> GetMethods() const;
 
         /**
             @brief Add delegate.
+            @param delegate Delegate to add
         */
         void Add(DelegateBase *delegate);
 
         /**
+            @brief Add method to delegate.
+            @param method Method to add
+            @return New added DelegateBase of method
+        */
+        DelegateBase *Add(BNM::MethodBase method);
+
+        /**
             @brief Remove delegate.
+            @param delegate Delegate to remove
         */
         void Remove(DelegateBase *delegate);
 
-        inline void operator +=(DelegateBase *base) { return Add(base); }
-        inline void operator -=(DelegateBase *base) { return Remove(base); }
+        inline void operator +=(DelegateBase *delegate) { return Add(delegate); }
+        inline void operator +=(BNM::MethodBase method) { return (void) Add(method); }
+        inline void operator -=(DelegateBase *delegate) { return Remove(delegate); }
 
         /**
             @brief Cast delegate to be able to invoke it.

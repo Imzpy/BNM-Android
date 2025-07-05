@@ -1,7 +1,7 @@
 #pragma once
 
-#include <list>
 #include <string>
+#include <string_view>
 
 #include "UserSettings/GlobalSettings.hpp"
 #include "Il2CppHeaders.hpp"
@@ -549,13 +549,19 @@ namespace BNM {
         enum class ModifierType : uint8_t {
             None, Array, Pointer, Reference
         };
+        inline CompileTimeClass() = default;
+        inline CompileTimeClass(Defaults::Internal::ClassType *reference) : _reference(reference) { _SetBit(); }
+
         /// @cond
-        std::list<_BaseInfo *> _stack{};
+        BNM::ForwardList<_BaseInfo *> _stack{};
         union {
             Class _loadedClass{};
             Defaults::Internal::ClassType *_reference;
         };
-        uint8_t _autoFree : 1{true}, _isReferenced{false};
+
+        inline bool _IsBit() { return ((uintptr_t)_reference) & 1; }
+        inline void _SetBit() { _reference = (Defaults::Internal::ClassType *) (((uintptr_t)_reference) | 1); }
+        inline void _RemoveBit() { _reference = (Defaults::Internal::ClassType *) (((uintptr_t)_reference) & ~1); }
         /// @endcond
 
         /**
@@ -644,10 +650,10 @@ namespace BNM {
             @param autoFree Should CompileTimeClass be freed after class was found or shouldn't (used mostly internally).
         */
         inline CompileTimeClassBuilder(const char *_namespace, const char *_name, const char *_imageName = nullptr, bool autoFree = true) {
-            _data._autoFree = autoFree;
+            if (autoFree) _data._SetBit();
             auto info = (CompileTimeClass::_ClassInfo *) BNM_malloc(sizeof(CompileTimeClass::_ClassInfo));
-            *info = CompileTimeClass::_ClassInfo{_namespace, _name, _imageName};
-            _data._stack.push_back(info);
+            new (info) CompileTimeClass::_ClassInfo{_namespace, _name, _imageName};
+            _data._stack.Add(info);
         }
 
         /**
@@ -661,8 +667,8 @@ namespace BNM {
         */
         inline CompileTimeClassBuilder &Class(const char *_name) {
             auto info = (CompileTimeClass::_InnerInfo *) BNM_malloc(sizeof(CompileTimeClass::_InnerInfo));
-            *info = CompileTimeClass::_InnerInfo{_name};
-            _data._stack.push_back(info);
+            new (info) CompileTimeClass::_InnerInfo{_name};
+            _data._stack.Add(info);
             return *this;
         }
 
@@ -677,8 +683,8 @@ namespace BNM {
         */
         inline CompileTimeClassBuilder &Modifier(CompileTimeClass::ModifierType type) {
             auto modifier = (CompileTimeClass::_ModifierInfo *) BNM_malloc(sizeof(CompileTimeClass::_ModifierInfo));
-            *modifier = CompileTimeClass::_ModifierInfo{type};
-            _data._stack.push_back(modifier);
+            new (modifier) CompileTimeClass::_ModifierInfo{type};
+            _data._stack.Add(modifier);
             return *this;
         }
 
@@ -693,9 +699,8 @@ namespace BNM {
         */
         inline CompileTimeClassBuilder &Generic(const std::initializer_list<CompileTimeClass> &templateTypes) {
             auto generic = (CompileTimeClass::_GenericInfo *) BNM_malloc(sizeof(CompileTimeClass::_GenericInfo));
-            memset(generic, 0, sizeof(CompileTimeClass::_GenericInfo));
-            *generic = CompileTimeClass::_GenericInfo{templateTypes};
-            _data._stack.push_back(generic);
+            new (generic) CompileTimeClass::_GenericInfo{templateTypes};
+            _data._stack.Add(generic);
             return *this;
         }
 

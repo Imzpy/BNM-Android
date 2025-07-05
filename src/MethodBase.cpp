@@ -29,14 +29,8 @@ MethodBase &MethodBase::SetInstance(IL2CPP::Il2CppObject *val)  {
         return *this;
     }
 #ifdef BNM_CHECK_INSTANCE_TYPE
-#if UNITY_VER > 174
-#define kls klass
-#else
-#define kls declaring_type
-#endif
-    if (BNM::IsA(val, _data->kls)) _instance = val;
+    if (BNM::IsA(val, BNM::PRIVATE_INTERNAL::GetMethodClass(_data))) _instance = val;
     else BNM_LOG_ERR(DBG_BNM_MSG_MethodBase_SetInstance_Wrong_Instance_Error, BNM::Class(val).str().c_str(), str().c_str());
-#undef kls
 #else
     _instance = val;
 #endif
@@ -80,4 +74,14 @@ MethodBase MethodBase::GetOverride() const {
         return MethodBase(vTable.method)[_instance];
     }
     return {};
+}
+
+BNM::Class MethodBase::GetReturnType() const {
+    if (!_data) return {};
+    return _data->return_type;
+}
+
+BNM::Class MethodBase::GetParentClass() const {
+    if (!_data) return {};
+    return BNM::PRIVATE_INTERNAL::GetMethodClass(_data);
 }

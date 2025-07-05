@@ -4,6 +4,8 @@
 
 #ifdef BNM_CLASSES_MANAGEMENT
 
+#include <vector>
+#include <string_view>
 #include <type_traits>
 
 #include "Il2CppHeaders.hpp"

@@ -152,6 +152,98 @@ namespace BNM {
     namespace PRIVATE_INTERNAL {
         template<typename T>
         inline T ReturnEmpty() { if constexpr (std::is_same_v<T, void>) return; else return {}; }
+
+        inline IL2CPP::Il2CppClass *&GetMethodClass(IL2CPP::MethodInfo *methodInfo) {
+#if UNITY_VER > 174
+#define kls klass
+#else
+#define kls declaring_type
+#endif
+            return methodInfo->kls;
+#undef kls
+        }
     }
     /// @endcond
+
+    /**
+        @brief BNM's custom forward list implementation
+
+        @warning Don't use it anywhere! Internal Only
+
+        Almost same as std::forward_list, but works how BNM needs to.
+        Has only pointer to last element, but elements are looped, so last element points to first one.
+        It used internally, so it lacks a lot of C++ stuff like foreach.
+    */
+    template<typename T>
+    struct ForwardList {
+        struct Element {
+            Element *next{};
+            T value{};
+        };
+
+        Element *lastElement{};
+
+        inline ForwardList() = default;
+
+        inline ~ForwardList() { Clear(); }
+
+        inline ForwardList(const ForwardList& other) : lastElement(nullptr) {
+            if (other.IsEmpty()) return;
+
+            auto currentOther = other.lastElement->next;
+            do {
+                Add(currentOther->value);
+                currentOther = currentOther->next;
+            } while (currentOther != other.lastElement->next);
+        }
+
+        inline ForwardList& operator=(const ForwardList& other) {
+            if (this == &other) return *this;
+
+            Clear();
+
+            if (other.IsEmpty()) return *this;
+
+            auto currentOther = other.lastElement->next;
+            do {
+                Add(currentOther->value);
+                currentOther = currentOther->next;
+            } while (currentOther != other.lastElement->next);
+
+            return *this;
+        }
+
+        [[nodiscard]] inline bool IsEmpty() const { return !lastElement; }
+
+        inline void Add(T value) {
+            auto newElement = (Element *) BNM_malloc(sizeof(Element));
+            newElement->next = nullptr;
+            newElement->value = value;
+
+            if (IsEmpty()) {
+                newElement->next = newElement;
+                lastElement = newElement;
+            } else {
+                newElement->next = lastElement->next;
+                lastElement->next = newElement;
+                lastElement = newElement;
+            }
+        }
+
+        inline void Clear(void (*onElementFreed)(T value) = nullptr) {
+            if (IsEmpty()) return;
+
+            auto current = lastElement->next;
+            lastElement->next = nullptr;
+
+            while (current) {
+                auto next = current->next;
+                if (onElementFreed) onElementFreed(current->value);
+                BNM_free(current);
+                current = next;
+            }
+
+            lastElement = nullptr;
+        }
+    };
 }

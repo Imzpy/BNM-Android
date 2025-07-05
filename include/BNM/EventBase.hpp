@@ -43,6 +43,12 @@ namespace BNM {
         EventBase &SetInstance(IL2CPP::Il2CppObject *instance);
 
         /**
+            @brief Get class that contains this event.
+            @return BNM::Class of event's class
+        */
+        [[nodiscard]] BNM::Class GetParentClass() const;
+
+        /**
             @brief Operator for setting instance.
             @param instance Instance
             @return Reference to current EventBase
