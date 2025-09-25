@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 3.8...3.26)
 
 project(BNM)
 
-# Build BNM examples
-set(BNM_BUILD_EXAMPLES OFF)
-
 # Add dependents to liblog.so
 set(BNM_LINK_LOG OFF)
 
@@ -63,33 +60,4 @@ endif ()
 
 
 set_property(TARGET BNM PROPERTY BNM_INCLUDE_DIRECTORIES ${PUBLIC_INCLUDE_DIRS})
-
-if (${BNM_BUILD_EXAMPLES})
-    add_library(BNM_Examples
-            SHARED
-            examples/Main.cpp
-            examples/01_Basics.cpp
-            examples/02_OtherStructures.cpp
-            examples/03_Generic.cpp
-            examples/04_CompileTimeClasses.cpp
-            examples/05_ClassesManagement.cpp
-            examples/06_Coroutine.cpp
-            examples/07_CustomFinder.cpp
-            examples/08_Exceptions.cpp
-    )
-
-    target_include_directories(
-            BNM_Examples
-            PUBLIC
-            ${PUBLIC_INCLUDE_DIRS}
-    )
-
-    target_link_libraries(
-            BNM_Examples
-            PUBLIC
-            BNM
-            log
-    )
-
-endif ()
 

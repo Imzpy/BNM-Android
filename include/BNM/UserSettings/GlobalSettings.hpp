@@ -49,7 +49,7 @@ static_assert(false, "ByNameModding requires C++20 and above!");
 #define BNM_CLASSES_MANAGEMENT
 
 //! Включить код создания coroutine. ТРЕБУЕТСЯ ClassesManagement!
-//! Enable coroutine creation code. REQUIRED ClassesManagement!
+//! Enable coroutine creation code. REQUIRES ClassesManagement!
 #define BNM_COROUTINE
 
 //! Отключить авто подмену через таблицу виртуальных методов в ClassesManagement
@@ -173,7 +173,6 @@ inline void Unhook(PTR_T ptr) {
 #define BNM_dlclose dlclose
 #define BNM_dladdr dladdr
 
-
 #include <cstdlib>
 
 // Если вам нужно скрыть методы работы с памятью
@@ -231,4 +230,4 @@ namespace BNM {
 #endif
 }
 
-#define BNM_VER "2.5.0"
+#define BNM_VER "2.5.1"

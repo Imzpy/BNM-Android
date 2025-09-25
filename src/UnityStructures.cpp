@@ -9,11 +9,13 @@ namespace BNM::Structures::Unity {
     void *RaycastHit::GetCollider() const {
         if (!m_Collider || (BNM_PTR) m_Collider < 0) return {};
 #if UNITY_VER > 174
-        static void *(*FromId)(int){};
-        if (!FromId) FromId = (decltype(FromId)) GetExternMethod(BNM_OBFUSCATE("UnityEngine.Object::FindObjectFromInstanceID"));
 #    if UNITY_VER >= 232
+        static void *(*FromId)(int){};
+        if (!FromId) FromId = (decltype(FromId)) GetExternMethod(BNM_OBFUSCATE("UnityEngine.Object::FindObjectFromInstanceID_Injected"));
         return (void *) BNM::UnmarshalUnityObject((BNM_INT_PTR) FromId(m_Collider));
 #    else
+        static void *(*FromId)(int){};
+        if (!FromId) FromId = (decltype(FromId)) GetExternMethod(BNM_OBFUSCATE("UnityEngine.Object::FindObjectFromInstanceID"));
         return FromId(m_Collider);
 #    endif
 #else
@@ -24,11 +26,13 @@ namespace BNM::Structures::Unity {
     void *RaycastHit2D::GetCollider() const {
         if (!m_Collider || (BNM_PTR) m_Collider < 0) return {};
 #if UNITY_VER > 174
-        static void *(*FromId)(int){};
-        if (!FromId) FromId = (decltype(FromId)) GetExternMethod(BNM_OBFUSCATE("UnityEngine.Object::FindObjectFromInstanceID"));
 #    if UNITY_VER >= 232
+        static void *(*FromId)(int){};
+        if (!FromId) FromId = (decltype(FromId)) GetExternMethod(BNM_OBFUSCATE("UnityEngine.Object::FindObjectFromInstanceID_Injected"));
         return (void *) BNM::UnmarshalUnityObject((BNM_INT_PTR) FromId(m_Collider));
 #    else
+        static void *(*FromId)(int){};
+        if (!FromId) FromId = (decltype(FromId)) GetExternMethod(BNM_OBFUSCATE("UnityEngine.Object::FindObjectFromInstanceID"));
         return FromId(m_Collider);
 #    endif
 #else
@@ -120,6 +124,8 @@ namespace BNM::Structures::Unity {
         *this = m;
         return success;
     }
+
+    Vector3::operator Vector4() const { return {x, y, z, 0}; }
 }
 
 namespace BNM::UnityEngine {
